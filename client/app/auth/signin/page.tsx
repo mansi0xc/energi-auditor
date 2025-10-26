@@ -26,7 +26,7 @@ export default function SignIn() {
       
       const result = await signIn("google", {
         callbackUrl: "/audit",
-        redirect: false,
+        redirect: true,
       })
 
       if (result?.error) {
