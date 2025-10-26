@@ -15,7 +15,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Brisingr - Smart Contract Auditor",
+  title: "Energi - Smart Contract Auditor",
   description: "AI-powered smart contract auditing platform for Energi team",
 };
 

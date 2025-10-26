@@ -207,7 +207,7 @@ export default function LogsPage() {
       <div className="min-h-screen bg-background">
         <AuthHeader />
         <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-6 text-center">
+          <div className="bg-red-950/30 border border-red-900/30 rounded-lg p-6 text-center">
             <h2 className="text-xl font-semibold text-red-400 mb-2">Error Loading Dashboard</h2>
             <p className="text-red-300 mb-4">{error}</p>
             <Button onClick={handleRefresh} variant="outline">
@@ -363,8 +363,8 @@ export default function LogsPage() {
                         <td className="py-3 px-4">
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             log.success 
-                              ? 'bg-green-500/10 text-green-400 border border-green-500/20'
-                              : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                              ? 'bg-primary/20 text-primary border border-primary/30'
+                              : 'bg-red-950/40 text-red-400 border border-red-900/40'
                           }`}>
                             {log.success ? 'Success' : 'Failed'}
                           </span>

@@ -18,7 +18,7 @@ export function AuthHeader() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
               <Link href="/" className="text-2xl font-bold text-primary">
-                Brisingr
+                Energi
               </Link>
             </div>
             <div className="animate-pulse">
@@ -36,7 +36,7 @@ export function AuthHeader() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4">
             <Link href="/" className="text-2xl font-bold text-primary">
-              Brisingr
+              Energi
             </Link>
             <nav className="hidden md:flex space-x-6">
               {session && (

@@ -162,21 +162,21 @@ export default function AuditPage() {
           
           {/* Summary */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="text-center p-3 bg-red-50 rounded-lg border border-red-200">
-              <div className="text-2xl font-bold text-red-600">{summary.CRITICAL}</div>
-              <div className="text-sm text-red-700">Critical</div>
+            <div className="text-center p-3 bg-red-950/30 rounded-lg border border-red-900/30">
+              <div className="text-2xl font-bold text-red-400">{summary.CRITICAL}</div>
+              <div className="text-sm text-red-300/70">Critical</div>
             </div>
-            <div className="text-center p-3 bg-orange-50 rounded-lg border border-orange-200">
-              <div className="text-2xl font-bold text-orange-600">{summary.HIGH}</div>
-              <div className="text-sm text-orange-700">High</div>
+            <div className="text-center p-3 bg-orange-950/30 rounded-lg border border-orange-900/30">
+              <div className="text-2xl font-bold text-orange-400">{summary.HIGH}</div>
+              <div className="text-sm text-orange-300/70">High</div>
             </div>
-            <div className="text-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-              <div className="text-2xl font-bold text-yellow-600">{summary.MEDIUM}</div>
-              <div className="text-sm text-yellow-700">Medium</div>
+            <div className="text-center p-3 bg-yellow-950/30 rounded-lg border border-yellow-900/30">
+              <div className="text-2xl font-bold text-yellow-400">{summary.MEDIUM}</div>
+              <div className="text-sm text-yellow-300/70">Medium</div>
             </div>
-            <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <div className="text-2xl font-bold text-blue-600">{summary.LOW}</div>
-              <div className="text-sm text-blue-700">Low</div>
+            <div className="text-center p-3 bg-blue-950/30 rounded-lg border border-blue-900/30">
+              <div className="text-2xl font-bold text-blue-400">{summary.LOW}</div>
+              <div className="text-sm text-blue-300/70">Low</div>
             </div>
           </div>
 
@@ -186,12 +186,12 @@ export default function AuditPage() {
               <span className="text-sm font-medium">Risk Score</span>
               <span className="text-sm font-bold">{riskScore}/100</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-muted rounded-full h-2">
               <div 
                 className={`h-2 rounded-full ${
                   riskScore >= 75 ? 'bg-red-500' : 
                   riskScore >= 50 ? 'bg-orange-500' : 
-                  riskScore >= 25 ? 'bg-yellow-500' : 'bg-green-500'
+                  riskScore >= 25 ? 'bg-yellow-500' : 'bg-primary'
                 }`}
                 style={{ width: `${riskScore}%` }}
               ></div>
@@ -222,10 +222,10 @@ export default function AuditPage() {
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-medium">{vuln.title}</h4>
                       <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        vuln.severity === 'CRITICAL' ? 'bg-red-100 text-red-800' :
-                        vuln.severity === 'HIGH' ? 'bg-orange-100 text-orange-800' :
-                        vuln.severity === 'MEDIUM' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-blue-100 text-blue-800'
+                        vuln.severity === 'CRITICAL' ? 'bg-red-950/40 text-red-300 border border-red-900/40' :
+                        vuln.severity === 'HIGH' ? 'bg-orange-950/40 text-orange-300 border border-orange-900/40' :
+                        vuln.severity === 'MEDIUM' ? 'bg-yellow-950/40 text-yellow-300 border border-yellow-900/40' :
+                        'bg-blue-950/40 text-blue-300 border border-blue-900/40'
                       }`}>
                         {vuln.severity}
                       </span>
@@ -312,7 +312,7 @@ export default function AuditPage() {
             )}
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="bg-red-950/30 border border-red-900/30 rounded-lg p-4">
                 <div className="flex">
                   <div className="flex-shrink-0">
                     <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -320,7 +320,7 @@ export default function AuditPage() {
                     </svg>
                   </div>
                   <div className="ml-3">
-                    <p className="text-sm text-red-800">{error}</p>
+                    <p className="text-sm text-red-300">{error}</p>
                   </div>
                 </div>
               </div>

@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
  */
 export async function GET() {
   return NextResponse.json({
-    service: 'Brisingr Smart Contract Audit API',
+    service: 'Energi Smart Contract Audit API',
     version: '1.0.0',
     status: 'operational',
     endpoints: {

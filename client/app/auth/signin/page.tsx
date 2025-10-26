@@ -44,7 +44,7 @@ export default function SignIn() {
       <div className="max-w-md w-full space-y-8 p-8 bg-card border border-border rounded-xl shadow-2xl">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground mb-2">
-            Welcome to Brisingr
+            Welcome to Energi
           </h1>
           <p className="text-muted-foreground mb-8">
             Smart Contract Auditing Platform
@@ -67,7 +67,7 @@ export default function SignIn() {
         </div>
 
         <div className="space-y-4">
-          <div className="bg-accent/20 border border-accent rounded-lg p-4">
+          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg
@@ -91,7 +91,7 @@ export default function SignIn() {
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+            <div className="bg-red-950/30 border border-red-900/30 rounded-lg p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <svg
