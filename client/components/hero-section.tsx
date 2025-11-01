@@ -1,6 +1,7 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import DarkVeilBackground from "@/components/dark-veil-background"
+import { CollaborativeLogo } from "@/components/collaborative-logo"
 
 interface HeroSectionProps {
   onGetStarted?: () => void
@@ -32,43 +33,31 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         Get Started
       </Button>
 
-      {/* Energi Branding */}
-      <div className="relative z-10 flex flex-col items-center space-y-6 mt-8">
-        {/* Logo Container with Glow Effect */}
+      {/* Collaborative Branding */}
+      <div className="relative z-10 flex flex-col items-center space-y-8 mt-8">
+        {/* Collaborative Logo with Glow */}
         <div className="relative group">
           {/* Glow Background */}
-          <div className="absolute -inset-4 bg-gradient-to-r from-primary via-primary-light to-primary opacity-40 blur-3xl group-hover:opacity-60 transition-opacity duration-500"></div>
+          <div className="absolute -inset-8 bg-gradient-to-r from-primary via-primary-light to-primary opacity-40 blur-3xl group-hover:opacity-60 transition-opacity duration-500"></div>
           
-          {/* Logo Circle */}
-          <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary-dark shadow-2xl ring-2 ring-primary/40 group-hover:ring-primary/60 transition-all duration-300 group-hover:scale-110">
-            <svg
-              className="w-10 h-10 text-primary-foreground"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 2L2 7l10 5 10-5-10-5z" />
-              <path d="M2 17l10 5 10-5" />
-              <path d="M2 12l10 5 10-5" />
-            </svg>
+          {/* Logo Container */}
+          <div className="relative">
+            <CollaborativeLogo size="lg" />
           </div>
         </div>
 
-        {/* Brand Name */}
-        <div className="flex flex-col items-center space-y-2">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-primary via-primary-light to-primary bg-clip-text text-transparent tracking-tight">
-            ENERGI
-          </h2>
+        {/* Platform Description */}
+        <div className="flex flex-col items-center space-y-3">
           <div className="flex items-center space-x-2">
-            <div className="h-px w-8 bg-gradient-to-r from-transparent to-primary"></div>
+            <div className="h-px w-12 bg-gradient-to-r from-transparent to-primary"></div>
             <p className="text-sm md:text-base text-muted-foreground font-medium tracking-widest uppercase">
               Smart Contract Auditor
             </p>
-            <div className="h-px w-8 bg-gradient-to-l from-transparent to-primary"></div>
+            <div className="h-px w-12 bg-gradient-to-l from-transparent to-primary"></div>
           </div>
+          <p className="text-xs md:text-sm text-muted-foreground/80 font-light tracking-wide">
+            Powered by AI • Secured by Expertise
+          </p>
         </div>
 
         {/* Decorative Elements */}

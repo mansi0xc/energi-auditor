@@ -9,6 +9,7 @@ import { HeroSection } from "@/components/hero-section"
 import { SignInModal } from "@/components/signin-modal"
 import { AuditSection } from "@/components/sections/audit-section"
 import { DashboardSection } from "@/components/sections/dashboard-section"
+import { CollaborativeLogo } from "@/components/collaborative-logo"
 
 function LandingPageContent() {
   const { data: session, status } = useSession()
@@ -68,8 +69,8 @@ function LandingPageContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-8">
-              <Link href="/" className="text-2xl font-bold text-primary">
-                Energi
+              <Link href="/" className="flex items-center">
+                <CollaborativeLogo size="md" />
               </Link>
               
               {/* Tab Navigation */}

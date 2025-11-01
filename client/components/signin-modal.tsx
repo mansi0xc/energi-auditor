@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { CollaborativeLogo } from "@/components/collaborative-logo"
 import {
   Sheet,
   SheetContent,
@@ -108,60 +109,47 @@ export function SignInModal({ open, onOpenChange, error: externalError }: SignIn
         ) : (
           // Normal Sign In View
           <>
-            <SheetHeader>
-              <SheetTitle className="text-center text-2xl">Welcome to Energi</SheetTitle>
-              <SheetDescription className="text-center">
-                Smart Contract Auditing Platform
-              </SheetDescription>
-            </SheetHeader>
-            
-            <div className="mt-6 space-y-4">
-              <div className="flex justify-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-r from-primary to-primary-dark rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-8 h-8 text-primary-foreground"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                    />
-                  </svg>
+            <div className="mt-6 space-y-6">
+              {/* Collaborative Logo */}
+              <div className="flex justify-center mb-4">
+                <CollaborativeLogo size="md" />
+              </div>
+
+              <div className="text-center">
+                <h2 className="text-2xl font-bold text-foreground mb-2">Welcome</h2>
+                <p className="text-sm text-muted-foreground">
+                  Smart Contract Auditing Platform
+                </p>
+              </div>
+
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-5 w-5 text-primary"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-muted-foreground">
+                      Only @energi.team email addresses are allowed to access this platform.
+                    </p>
+                  </div>
                 </div>
               </div>
 
-          <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-primary"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-muted-foreground">
-                  Only @energi.team email addresses are allowed to access this platform.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <Button
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-            className="w-full bg-muted hover:bg-muted/80 text-foreground border border-border font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-3"
-          >
+              <Button
+                onClick={handleGoogleSignIn}
+                disabled={isLoading}
+                className="w-full bg-muted hover:bg-muted/80 text-foreground border border-border font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-3"
+              >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
@@ -180,10 +168,10 @@ export function SignInModal({ open, onOpenChange, error: externalError }: SignIn
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
             </svg>
-            <span>
-              {isLoading ? "Signing in..." : "Continue with Google"}
-            </span>
-          </Button>
+                <span>
+                  {isLoading ? "Signing in..." : "Continue with Google"}
+                </span>
+              </Button>
 
               <div className="text-center pt-2">
                 <p className="text-xs text-muted-foreground">
