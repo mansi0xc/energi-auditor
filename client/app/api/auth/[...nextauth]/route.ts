@@ -18,7 +18,7 @@ const handler = NextAuth({
         return true
       }
 
-      // Reject sign-in for users not from the allowed domain
+      // Reject sign-in - NextAuth will redirect to error page with AccessDenied error
       return false
     },
     async session({ session, token }) {
@@ -31,21 +31,21 @@ const handler = NextAuth({
     },
     async redirect({ url, baseUrl }) {
       try {
-        // Always send users to the audit page after auth if a relative path was provided
+        // Always send users to the home page after auth
         if (url.startsWith("/")) {
-          return `${baseUrl}/audit`
+          return baseUrl
         }
         const dest = new URL(url)
         if (dest.origin === baseUrl) {
           return dest.toString()
         }
       } catch {}
-      return `${baseUrl}/audit`
+      return baseUrl
     },
   },
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
+    signIn: "/",
+    error: "/",
   },
   session: {
     strategy: "jwt",

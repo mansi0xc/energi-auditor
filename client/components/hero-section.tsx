@@ -1,9 +1,12 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
-import Link from "next/link"
 import DarkVeilBackground from "@/components/dark-veil-background"
 
-export function HeroSection() {
+interface HeroSectionProps {
+  onGetStarted?: () => void
+}
+
+export function HeroSection({ onGetStarted }: HeroSectionProps) {
   return (
     <section className="flex flex-col items-center justify-center text-center relative w-full h-screen overflow-hidden">
       {/* Dark Veil Background */}
@@ -22,11 +25,12 @@ export function HeroSection() {
         </p>
       </div>
 
-      <Link href="/audit">
-        <Button className="relative z-10 bg-secondary text-secondary-foreground hover:bg-secondary/90 px-8 py-3 rounded-full font-medium text-base shadow-lg ring-1 ring-white/10 mb-12">
-          Get Started
-        </Button>
-      </Link>
+      <Button 
+        onClick={onGetStarted}
+        className="relative z-10 bg-secondary text-secondary-foreground hover:bg-secondary/90 px-8 py-3 rounded-full font-medium text-base shadow-lg ring-1 ring-white/10 mb-12"
+      >
+        Get Started
+      </Button>
 
       {/* Energi Branding */}
       <div className="relative z-10 flex flex-col items-center space-y-6 mt-8">

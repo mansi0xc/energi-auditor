@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
-import { AuthHeader } from "@/components/auth-header"
 import { summarizeVulnerabilities, calculateRiskScore } from "@/functions/auditInit"
 import type { AuditReport } from "@/functions/auditInit"
 import { 
@@ -13,8 +12,8 @@ import {
 } from "@/components/credit-tracker"
 import { generateAuditReportPDF } from "@/lib/pdf-generator"
 
-export default function AuditPage() {
-  const { data: session, status } = useSession()
+export function AuditSection() {
+  const { data: session } = useSession()
   const [contract, setContract] = useState("")
   const [contractName, setContractName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -29,33 +28,6 @@ export default function AuditPage() {
     vulnerabilitiesFound: number;
   } | null>(null)
 
-  // Show loading state while checking authentication
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Redirect to sign-in if not authenticated (middleware should handle this, but just in case)
-  if (!session) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
-          <p className="text-muted-foreground mb-4">Please sign in to access the audit tool.</p>
-          <Button asChild>
-            <a href="/auth/signin">Sign In</a>
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
   const handleAudit = async () => {
     if (!contract.trim()) {
       setError("Please paste a smart contract")
@@ -67,7 +39,6 @@ export default function AuditPage() {
     setAuditReport(null)
 
     try {
-      // Call internal API
       const response = await fetch('/api/audit', {
         method: 'POST',
         headers: {
@@ -89,7 +60,6 @@ export default function AuditPage() {
       if (result.success && result.data) {
         setAuditReport(result.data)
         
-        // Update session credits and show feedback
         if (result.metadata) {
           const creditsConsumed = result.metadata.creditsConsumed || 1;
           setSessionCredits(prev => prev + creditsConsumed);
@@ -116,7 +86,6 @@ export default function AuditPage() {
     
     setIsDownloadingPDF(true)
     try {
-      // Small delay to show loading state
       await new Promise(resolve => setTimeout(resolve, 500))
       generateAuditReportPDF(auditReport, session?.user?.email || undefined)
     } catch (error) {
@@ -255,19 +224,16 @@ export default function AuditPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <AuthHeader />
-      
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
-            <div className="space-y-2">
-              <h1 className="text-3xl font-bold text-foreground">Smart Contract Audit</h1>
-              <p className="text-muted-foreground">
-                Paste your smart contract code below to analyze for vulnerabilities using AI-powered auditing.
-              </p>
-            </div>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-3 space-y-6">
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold text-foreground">Smart Contract Audit</h1>
+            <p className="text-muted-foreground">
+              Paste your smart contract code below to analyze for vulnerabilities using AI-powered auditing.
+            </p>
+          </div>
 
           {/* Input Form */}
           <div className="space-y-4">
@@ -298,10 +264,8 @@ export default function AuditPage() {
               />
             </div>
 
-            {/* Credit Cost Indicator */}
             <CreditCostIndicator cost={1} />
 
-            {/* Credit Consumed Feedback */}
             {showCreditFeedback && lastAuditMetadata && (
               <CreditConsumedFeedback
                 creditsConsumed={lastAuditMetadata.creditsConsumed}
@@ -342,20 +306,18 @@ export default function AuditPage() {
             </Button>
           </div>
 
-            {/* Results */}
-            {renderAuditResults()}
-          </div>
+          {renderAuditResults()}
+        </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Credit Display */}
-            <CreditDisplay 
-              sessionCredits={sessionCredits}
-              showDetails={true}
-            />
-          </div>
+        {/* Sidebar */}
+        <div className="lg:col-span-1 space-y-6">
+          <CreditDisplay 
+            sessionCredits={sessionCredits}
+            showDetails={true}
+          />
         </div>
       </div>
     </div>
   )
 }
+

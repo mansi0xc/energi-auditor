@@ -3,20 +3,16 @@ import { NextResponse } from "next/server"
 
 export default withAuth(
   function middleware(req) {
-    // Allow access to audit routes only for authenticated users
-    if (req.nextUrl.pathname.startsWith("/audit")) {
-      if (!req.nextauth.token) {
-        return NextResponse.redirect(new URL("/auth/signin", req.url))
-      }
-    }
-    
+    // Middleware for API routes - require authentication
     return NextResponse.next()
   },
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        // For audit routes, require authentication
-        if (req.nextUrl.pathname.startsWith("/audit")) {
+        // For API routes that need auth, require token
+        if (req.nextUrl.pathname.startsWith("/api/audit") ||
+            req.nextUrl.pathname.startsWith("/api/logs") ||
+            req.nextUrl.pathname.startsWith("/api/user")) {
           return !!token
         }
         
@@ -29,9 +25,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/audit/:path*",
     "/api/audit/:path*",
-    "/logs/:path*",
     "/api/logs/:path*",
     "/api/user/:path*"
   ]
