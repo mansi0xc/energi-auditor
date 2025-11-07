@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import AuditReportModel from '@/lib/models/AuditReport';
 
@@ -7,39 +6,15 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * Check if user is admin
- */
-function isAdminUser(email: string): boolean {
-  const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN || '@energi.team';
-  return email.endsWith(allowedDomain);
-}
-
-/**
- * GET /api/analytics/stats - Get aggregated audit statistics from MongoDB
+ * GET /api/analytics/stats - Get aggregated audit statistics from MongoDB (public)
  * Query parameters:
  * - startDate: YYYY-MM-DD (optional)
  * - endDate: YYYY-MM-DD (optional)
  */
 export async function GET(request: NextRequest) {
   try {
-    // 1. Validate session
-    const session = await getServerSession();
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // 2. Check admin permissions
-    if (!isAdminUser(session.user.email)) {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      );
-    }
-
-    // 3. Parse query parameters
+    // Public endpoint - no authentication required
+    // Parse query parameters
     const { searchParams } = new URL(request.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
@@ -176,7 +151,6 @@ export async function GET(request: NextRequest) {
           endDate: endDate || 'current',
         },
         generatedAt: new Date().toISOString(),
-        generatedBy: session.user.email,
       },
     });
 

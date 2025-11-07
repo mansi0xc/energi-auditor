@@ -1,4 +1,5 @@
 import React from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import DarkVeilBackground from "@/components/dark-veil-background"
 import { CollaborativeLogo } from "@/components/collaborative-logo"
@@ -26,12 +27,22 @@ export function HeroSection({ onGetStarted }: HeroSectionProps) {
         </p>
       </div>
 
-      <Button 
-        onClick={onGetStarted}
-        className="relative z-10 bg-secondary text-secondary-foreground hover:bg-secondary/90 px-8 py-3 rounded-full font-medium text-base shadow-lg ring-1 ring-white/10 mb-12"
-      >
-        Get Started
-      </Button>
+      <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 mb-12">
+        <Button 
+          onClick={onGetStarted}
+          className="bg-secondary text-secondary-foreground hover:bg-secondary/90 px-8 py-3 rounded-full font-medium text-base shadow-lg ring-1 ring-white/10"
+        >
+          Get Started
+        </Button>
+        <Link href="/analytics">
+          <Button 
+            variant="outline"
+            className="px-8 py-3 rounded-full font-medium text-base shadow-lg ring-1 ring-white/10"
+          >
+            View Analytics
+          </Button>
+        </Link>
+      </div>
 
       {/* Collaborative Branding */}
       <div className="relative z-10 flex flex-col items-center space-y-8 mt-8">

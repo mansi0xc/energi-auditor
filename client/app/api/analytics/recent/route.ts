@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
 import AuditReportModel from '@/lib/models/AuditReport';
 
@@ -7,15 +6,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * Check if user is admin
- */
-function isAdminUser(email: string): boolean {
-  const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN || '@energi.team';
-  return email.endsWith(allowedDomain);
-}
-
-/**
- * GET /api/analytics/recent - Get recent audit reports for all users (admin only)
+ * GET /api/analytics/recent - Get recent audit reports for all users (public)
  * Query parameters:
  * - limit: number of recent audits to return (default: 50)
  * - startDate: YYYY-MM-DD (optional)
@@ -23,24 +14,8 @@ function isAdminUser(email: string): boolean {
  */
 export async function GET(request: NextRequest) {
   try {
-    // 1. Validate session
-    const session = await getServerSession();
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // 2. Check admin permissions
-    if (!isAdminUser(session.user.email)) {
-      return NextResponse.json(
-        { error: 'Admin access required' },
-        { status: 403 }
-      );
-    }
-
-    // 3. Get query parameters
+    // Public endpoint - no authentication required
+    // Get query parameters
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const startDate = searchParams.get('startDate');

@@ -8,18 +8,13 @@ import { Button } from "@/components/ui/button"
 import { HeroSection } from "@/components/hero-section"
 import { SignInModal } from "@/components/signin-modal"
 import { AuditSection } from "@/components/sections/audit-section"
-import { DashboardSection } from "@/components/sections/dashboard-section"
 import { CollaborativeLogo } from "@/components/collaborative-logo"
 
 function LandingPageContent() {
   const { data: session, status } = useSession()
   const searchParams = useSearchParams()
   const [showSignInModal, setShowSignInModal] = useState(false)
-  const [activeTab, setActiveTab] = useState<'audit' | 'dashboard'>('audit')
   const [authError, setAuthError] = useState<string | null>(null)
-
-  // Check if user is admin
-  const isAdmin = session?.user?.email?.endsWith('@energi.team')
 
   // Handle auth errors from URL params
   useEffect(() => {
@@ -75,16 +70,13 @@ function LandingPageContent() {
               
               {/* Tab Navigation */}
               <nav className="hidden md:flex space-x-1">
-                <button
-                  onClick={() => setActiveTab('audit')}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    activeTab === 'audit'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                  }`}
-                >
-                  Audit
-                </button>
+                <Link href="/">
+                  <button
+                    className="px-4 py-2 rounded-lg font-medium transition-colors bg-primary text-primary-foreground"
+                  >
+                    Audit
+                  </button>
+                </Link>
                 <Link href="/history">
                   <button
                     className="px-4 py-2 rounded-lg font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -92,18 +84,13 @@ function LandingPageContent() {
                     History
                   </button>
                 </Link>
-                {isAdmin && (
+                <Link href="/analytics">
                   <button
-                    onClick={() => setActiveTab('dashboard')}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      activeTab === 'dashboard'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                    }`}
+                    className="px-4 py-2 rounded-lg font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
                   >
                     Analytics
                   </button>
-                )}
+                </Link>
               </nav>
             </div>
 
@@ -138,16 +125,13 @@ function LandingPageContent() {
 
           {/* Mobile Tab Navigation */}
           <div className="md:hidden flex space-x-1 pb-3">
-            <button
-              onClick={() => setActiveTab('audit')}
-              className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                activeTab === 'audit'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              }`}
-            >
-              Audit
-            </button>
+            <Link href="/" className="flex-1">
+              <button
+                className="w-full px-4 py-2 rounded-lg font-medium transition-colors bg-primary text-primary-foreground"
+              >
+                Audit
+              </button>
+            </Link>
             <Link href="/history" className="flex-1">
               <button
                 className="w-full px-4 py-2 rounded-lg font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
@@ -155,26 +139,20 @@ function LandingPageContent() {
                 History
               </button>
             </Link>
-            {isAdmin && (
+            <Link href="/analytics" className="flex-1">
               <button
-                onClick={() => setActiveTab('dashboard')}
-                className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  activeTab === 'dashboard'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-                }`}
+                className="w-full px-4 py-2 rounded-lg font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
               >
                 Analytics
               </button>
-            )}
+            </Link>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
       <main>
-        {activeTab === 'audit' && <AuditSection />}
-        {activeTab === 'dashboard' && isAdmin && <DashboardSection />}
+        <AuditSection />
       </main>
     </div>
   )
