@@ -85,6 +85,13 @@ function LandingPageContent() {
                 >
                   Audit
                 </button>
+                <Link href="/history">
+                  <button
+                    className="px-4 py-2 rounded-lg font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
+                  >
+                    History
+                  </button>
+                </Link>
                 {isAdmin && (
                   <button
                     onClick={() => setActiveTab('dashboard')}
@@ -141,6 +148,13 @@ function LandingPageContent() {
             >
               Audit
             </button>
+            <Link href="/history" className="flex-1">
+              <button
+                className="w-full px-4 py-2 rounded-lg font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent"
+              >
+                History
+              </button>
+            </Link>
             {isAdmin && (
               <button
                 onClick={() => setActiveTab('dashboard')}

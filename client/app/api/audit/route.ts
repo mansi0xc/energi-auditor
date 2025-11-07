@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { logger, generateRequestId } from '@/lib/logging';
 import { auditSmartContract, AuditError, type AuditReport, type Vulnerability } from '@/functions/auditInit';
+import connectDB from '@/lib/mongodb';
+import AuditReport from '@/lib/models/AuditReport';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -165,7 +167,35 @@ export async function POST(request: NextRequest) {
       requestId
     );
 
-    // 8. Return audit report
+    // 8. Save audit report to MongoDB
+    try {
+      await connectDB();
+      await AuditReport.create({
+        userEmail,
+        contractName: auditReport.contractName,
+        language: auditReport.language,
+        summary: auditReport.summary,
+        vulnerabilities: auditReport.vulnerabilities,
+        linesOfCode: auditReport.linesOfCode,
+        auditedAt: auditReport.auditedAt,
+        auditEngineVersion: auditReport.auditEngineVersion,
+        rawResponse: auditReport.rawResponse,
+        requestId,
+        auditDuration,
+      });
+    } catch (dbError) {
+      // Log database error but don't fail the request
+      console.error('Failed to save audit report to database:', dbError);
+      await logger.logError(
+        'DATABASE_ERROR',
+        'Failed to save audit report to MongoDB',
+        userEmail,
+        dbError instanceof Error ? dbError.stack : undefined,
+        requestId
+      );
+    }
+
+    // 9. Return audit report
     return NextResponse.json({
       success: true,
       data: auditReport,

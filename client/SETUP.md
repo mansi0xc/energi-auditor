@@ -18,6 +18,11 @@ GEMINI_API_KEY=your-gemini-api-key-here
 
 # Allowed email domain
 ALLOWED_EMAIL_DOMAIN=@energi.team
+
+# MongoDB Configuration
+MONGODB_URI=mongodb://localhost:27017/energi-auditor
+# Or for MongoDB Atlas (cloud):
+# MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/energi-auditor?retryWrites=true&w=majority
 ```
 
 ## Google OAuth Setup
@@ -50,6 +55,63 @@ The application is configured to only allow users with `@energi.team` email addr
 3. Add it to your `.env.local` file as `GEMINI_API_KEY`
 
 Note: The system is designed to easily switch back to ChainGPT API when their endpoint becomes available - just update the `AUDIT_API_URL` in `functions/auditInit.ts`.
+
+## MongoDB Setup
+
+The application uses MongoDB to store audit report history. You have two options:
+
+### Option 1: Local MongoDB
+
+1. Install MongoDB locally:
+   - **macOS**: `brew install mongodb-community`
+   - **Linux**: Follow [MongoDB installation guide](https://www.mongodb.com/docs/manual/installation/)
+   - **Windows**: Download from [MongoDB website](https://www.mongodb.com/try/download/community)
+
+2. Start MongoDB service:
+   ```bash
+   # macOS/Linux
+   brew services start mongodb-community
+   # or
+   mongod --dbpath /path/to/data
+   ```
+
+3. Use connection string in `.env.local`:
+   ```
+   MONGODB_URI=mongodb://localhost:27017/energi-auditor
+   ```
+
+### Option 2: MongoDB Atlas (Cloud)
+
+1. Go to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Create a free cluster
+3. Create a database user
+4. Whitelist your IP address (or use `0.0.0.0/0` for development)
+5. Get your connection string and add it to `.env.local`:
+   ```
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/energi-auditor?retryWrites=true&w=majority
+   ```
+
+### Database Schema
+
+The application automatically creates the following collection:
+- **auditreports**: Stores all audit reports with the following fields:
+  - `userEmail`: Email of the user who created the audit
+  - `contractName`: Name of the audited contract
+  - `language`: Contract language (Solidity, Vyper, etc.)
+  - `summary`: Executive summary
+  - `vulnerabilities`: Array of vulnerability objects
+  - `linesOfCode`: Number of lines analyzed
+  - `auditedAt`: Timestamp of the audit
+  - `auditDuration`: Duration in milliseconds
+  - `createdAt` / `updatedAt`: Automatic timestamps
+
+### Accessing Audit History
+
+Users can access their audit history by:
+1. Navigating to the "History" tab in the main navigation
+2. Viewing all their previous audits
+3. Clicking on any audit to view full details
+4. Downloading PDF reports for any saved audit
 
 ## NextAuth Secret
 
