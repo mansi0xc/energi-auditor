@@ -98,8 +98,8 @@ export function DashboardSection() {
       if (endDate) params.set('endDate', endDate);
 
       const [statsResponse, logsResponse] = await Promise.all([
-        fetch(`/api/logs/stats?${params.toString()}`),
-        fetch(`/api/logs?limit=50&${params.toString()}`)
+        fetch(`/api/analytics/stats?${params.toString()}`),
+        fetch(`/api/audit/history?limit=50&${params.toString()}`)
       ]);
 
       if (!statsResponse.ok || !logsResponse.ok) {
@@ -115,7 +115,7 @@ export function DashboardSection() {
         setStats(statsResult.data);
       }
       if (logsResult.success) {
-        setRecentLogs(logsResult.data);
+        setRecentLogs(logsResult.data.data || []);
       }
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
@@ -134,13 +134,14 @@ export function DashboardSection() {
   const handleExportLogs = () => {
     if (recentLogs.length > 0) {
       const exportData = recentLogs.map(log => ({
-        timestamp: new Date(log.timestamp).toLocaleString(),
+        timestamp: new Date(log.auditedAt || log.createdAt).toLocaleString(),
         userEmail: log.userEmail,
         contractName: log.contractName || 'N/A',
-        creditsConsumed: log.creditsConsumed,
-        success: log.success ? 'Yes' : 'No',
-        vulnerabilitiesFound: log.vulnerabilitiesFound || 0,
+        creditsConsumed: 1,
+        vulnerabilitiesFound: log.vulnerabilities?.length || 0,
         auditDuration: log.auditDuration ? `${(log.auditDuration / 1000).toFixed(1)}s` : 'N/A',
+        preAuditScore: log.preAuditScore || 'N/A',
+        postAuditScore: log.postAuditScore || 'N/A',
       }));
       
       const filename = `audit-logs-${selectedRange}-${new Date().toISOString().split('T')[0]}.csv`;
@@ -230,7 +231,7 @@ export function DashboardSection() {
       {stats && (
         <>
           {/* Overview Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
             <MetricCard
               title="Total Audits"
               value={stats.totalAudits.toLocaleString()}
@@ -259,12 +260,22 @@ export function DashboardSection() {
               }
             />
             <MetricCard
-              title="Success Rate"
-              value={`${stats.successRate.toFixed(1)}%`}
-              trend={stats.successRate >= 95 ? 'up' : stats.successRate >= 90 ? 'stable' : 'down'}
+              title="Pre Audit Score"
+              value={stats.averagePreAuditScore.toFixed(1)}
+              trend={stats.averagePreAuditScore >= 70 ? 'up' : stats.averagePreAuditScore >= 50 ? 'stable' : 'down'}
               icon={
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              }
+            />
+            <MetricCard
+              title="Post Audit Score"
+              value={stats.averagePostAuditScore.toFixed(1)}
+              trend={stats.averagePostAuditScore >= 80 ? 'up' : stats.averagePostAuditScore >= 60 ? 'stable' : 'down'}
+              icon={
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
               }
             />
@@ -305,16 +316,16 @@ export function DashboardSection() {
                     <th className="text-left py-3 px-4 text-muted-foreground">Time</th>
                     <th className="text-left py-3 px-4 text-muted-foreground">User</th>
                     <th className="text-left py-3 px-4 text-muted-foreground">Contract</th>
-                    <th className="text-left py-3 px-4 text-muted-foreground">Status</th>
                     <th className="text-left py-3 px-4 text-muted-foreground">Vulnerabilities</th>
-                    <th className="text-left py-3 px-4 text-muted-foreground">Credits</th>
+                    <th className="text-left py-3 px-4 text-muted-foreground">Pre Score</th>
+                    <th className="text-left py-3 px-4 text-muted-foreground">Post Score</th>
                   </tr>
                 </thead>
                 <tbody>
                   {recentLogs.map((log, index) => (
-                    <tr key={log.id || index} className="border-b border-border/50">
+                    <tr key={log._id || index} className="border-b border-border/50">
                       <td className="py-3 px-4 text-foreground">
-                        {new Date(log.timestamp).toLocaleString()}
+                        {new Date(log.auditedAt || log.createdAt).toLocaleString()}
                       </td>
                       <td className="py-3 px-4 text-foreground">
                         {log.userEmail.split('@')[0]}
@@ -322,20 +333,18 @@ export function DashboardSection() {
                       <td className="py-3 px-4 text-foreground">
                         {log.contractName || 'Unnamed'}
                       </td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          log.success 
-                            ? 'bg-primary/20 text-primary border border-primary/30'
-                            : 'bg-red-950/40 text-red-400 border border-red-900/40'
-                        }`}>
-                          {log.success ? 'Success' : 'Failed'}
-                        </span>
+                      <td className="py-3 px-4 text-foreground">
+                        {log.vulnerabilities?.length || 0}
                       </td>
                       <td className="py-3 px-4 text-foreground">
-                        {log.vulnerabilitiesFound || 0}
+                        {log.preAuditScore !== undefined && log.preAuditScore !== null 
+                          ? log.preAuditScore.toFixed(1) 
+                          : 'N/A'}
                       </td>
                       <td className="py-3 px-4 text-foreground">
-                        {log.creditsConsumed}
+                        {log.postAuditScore !== undefined && log.postAuditScore !== null 
+                          ? log.postAuditScore.toFixed(1) 
+                          : 'N/A'}
                       </td>
                     </tr>
                   ))}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { logger, generateRequestId } from '@/lib/logging';
-import { auditSmartContract, AuditError, type AuditReport, type Vulnerability } from '@/functions/auditInit';
+import { auditSmartContract, AuditError, type AuditReport, type Vulnerability, calculatePreAuditScore, calculatePostAuditScore } from '@/functions/auditInit';
 import connectDB from '@/lib/mongodb';
 import AuditReportModel from '@/lib/models/AuditReport';
 
@@ -167,7 +167,11 @@ export async function POST(request: NextRequest) {
       requestId
     );
 
-    // 8. Save audit report to MongoDB
+    // 8. Calculate audit scores
+    const preAuditScore = calculatePreAuditScore(contractCode, contractName);
+    const postAuditScore = calculatePostAuditScore(auditReport);
+
+    // 9. Save audit report to MongoDB
     try {
       await connectDB();
       await AuditReportModel.create({
@@ -182,6 +186,8 @@ export async function POST(request: NextRequest) {
         rawResponse: auditReport.rawResponse,
         requestId,
         auditDuration,
+        preAuditScore,
+        postAuditScore,
       });
     } catch (dbError) {
       // Log database error but don't fail the request
@@ -195,7 +201,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 9. Return audit report
+    // 10. Return audit report
     return NextResponse.json({
       success: true,
       data: auditReport,
@@ -203,7 +209,9 @@ export async function POST(request: NextRequest) {
         requestId,
         auditDuration,
         creditsConsumed: 1,
-        vulnerabilitiesFound: auditReport.vulnerabilities.length
+        vulnerabilitiesFound: auditReport.vulnerabilities.length,
+        preAuditScore,
+        postAuditScore,
       }
     });
 

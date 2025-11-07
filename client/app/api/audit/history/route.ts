@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50', 10);
     const skip = parseInt(searchParams.get('skip') || '0', 10);
     const contractName = searchParams.get('contractName');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
 
     // 3. Connect to database
     await connectDB();
@@ -35,6 +37,17 @@ export async function GET(request: NextRequest) {
     const query: any = { userEmail };
     if (contractName) {
       query.contractName = { $regex: contractName, $options: 'i' };
+    }
+    if (startDate || endDate) {
+      query.auditedAt = {};
+      if (startDate) {
+        query.auditedAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.auditedAt.$lte = end;
+      }
     }
 
     // 5. Fetch audit reports

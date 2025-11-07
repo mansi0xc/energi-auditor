@@ -459,6 +459,56 @@ export function calculateRiskScore(report: AuditReport): number {
 }
 
 /**
+ * Calculates a pre-audit score based on contract complexity
+ * @param contractCode - The contract code to analyze
+ * @param contractName - Name of the contract
+ * @returns Pre-audit score from 0-100 (higher = more complex/needs more attention)
+ */
+export function calculatePreAuditScore(contractCode: string, contractName?: string): number {
+  const linesOfCode = contractCode.split('\n').length;
+  const linesWithoutComments = contractCode.split('\n').filter(line => {
+    const trimmed = line.trim();
+    return trimmed.length > 0 && !trimmed.startsWith('//') && !trimmed.startsWith('/*');
+  }).length;
+  
+  // Calculate complexity factors
+  const hasMultipleContracts = (contractCode.match(/contract\s+\w+/g) || []).length > 1;
+  const hasInheritance = contractCode.includes('is ');
+  const hasModifiers = (contractCode.match(/modifier\s+\w+/g) || []).length;
+  const hasEvents = (contractCode.match(/event\s+\w+/g) || []).length;
+  const hasFunctions = (contractCode.match(/function\s+\w+/g) || []).length;
+  const hasLibraries = contractCode.includes('library ');
+  const hasInterfaces = contractCode.includes('interface ');
+  
+  // Base score from code size (0-40 points)
+  let score = Math.min(40, (linesWithoutComments / 10));
+  
+  // Complexity factors (0-60 points)
+  if (hasMultipleContracts) score += 10;
+  if (hasInheritance) score += 8;
+  if (hasLibraries) score += 7;
+  if (hasInterfaces) score += 5;
+  score += Math.min(15, hasModifiers * 2);
+  score += Math.min(10, hasEvents);
+  score += Math.min(15, Math.floor(hasFunctions / 5) * 2);
+  
+  // Normalize to 0-100
+  return Math.min(100, Math.max(0, Math.round(score)));
+}
+
+/**
+ * Calculates a post-audit security score based on vulnerabilities found
+ * @param report - The audit report to analyze
+ * @returns Security score from 0-100 (higher = more secure, inverse of risk score)
+ */
+export function calculatePostAuditScore(report: AuditReport): number {
+  const riskScore = calculateRiskScore(report);
+  // Convert risk score to security score (inverse)
+  // Risk 0 = Security 100, Risk 100 = Security 0
+  return Math.max(0, Math.min(100, 100 - riskScore));
+}
+
+/**
  * Formats an audit report for display or logging
  * @param report - The audit report to format
  * @returns Formatted string representation of the report

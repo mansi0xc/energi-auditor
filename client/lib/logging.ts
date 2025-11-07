@@ -45,7 +45,8 @@ export interface AuditStatistics {
   totalAudits: number;
   totalCreditsConsumed: number;
   totalUsers: number;
-  successRate: number;
+  averagePreAuditScore: number;
+  averagePostAuditScore: number;
   averageAuditDuration: number;
   vulnerabilityStats: {
     totalVulnerabilities: number;
@@ -330,7 +331,8 @@ class Logger {
     const successfulAudits = logs.filter(log => log.success);
     const totalCreditsConsumed = logs.reduce((sum, log) => sum + log.creditsConsumed, 0);
     const uniqueUsers = new Set(logs.map(log => log.userEmail)).size;
-    const successRate = totalAudits > 0 ? (successfulAudits.length / totalAudits) * 100 : 0;
+    // Note: successRate removed, using averagePreAuditScore and averagePostAuditScore instead
+    // These are calculated from MongoDB data, not file logs
     
     const auditDurations = successfulAudits
       .map(log => log.auditDuration)
@@ -391,7 +393,8 @@ class Logger {
       totalAudits,
       totalCreditsConsumed,
       totalUsers: uniqueUsers,
-      successRate,
+      averagePreAuditScore: 0, // Calculated from MongoDB
+      averagePostAuditScore: 0, // Calculated from MongoDB
       averageAuditDuration,
       vulnerabilityStats: {
         totalVulnerabilities,

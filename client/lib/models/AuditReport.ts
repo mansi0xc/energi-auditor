@@ -13,6 +13,8 @@ export interface IAuditReport extends Document {
   rawResponse?: unknown;
   requestId?: string;
   auditDuration?: number;
+  preAuditScore?: number; // Score from 0-100 based on contract complexity/analysis
+  postAuditScore?: number; // Security score from 0-100 after audit (inverse of risk score)
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,6 +67,8 @@ const AuditReportSchema = new Schema(
     rawResponse: { type: Schema.Types.Mixed },
     requestId: { type: String },
     auditDuration: { type: Number },
+    preAuditScore: { type: Number, min: 0, max: 100 },
+    postAuditScore: { type: Number, min: 0, max: 100 },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt

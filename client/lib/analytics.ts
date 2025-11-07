@@ -19,7 +19,7 @@ export interface BusinessMetrics {
   
   // Performance Metrics
   averageAuditDuration: number;
-  successRateTrend: Array<{ date: string; rate: number }>;
+  postAuditScoreTrend: Array<{ date: string; score: number }>;
   errorRateByType: Array<{ type: string; count: number; percentage: number }>;
   
   // Contract Analysis
@@ -273,22 +273,22 @@ export function generateBusinessInsights(
 ): UsageInsight[] {
   const insights: UsageInsight[] = [];
   
-  // Success rate insight
-  if (stats.successRate > 95) {
+  // Post-audit score insight
+  if (stats.averagePostAuditScore >= 80) {
     insights.push({
       type: 'positive',
-      title: 'Excellent Success Rate',
-      description: `Your audit success rate is ${stats.successRate.toFixed(1)}%, indicating reliable service performance.`,
-      metric: stats.successRate,
+      title: 'Excellent Security Posture',
+      description: `Average post-audit security score is ${stats.averagePostAuditScore.toFixed(1)}/100, indicating strong security practices.`,
+      metric: stats.averagePostAuditScore,
       priority: 'low',
     });
-  } else if (stats.successRate < 90) {
+  } else if (stats.averagePostAuditScore < 60) {
     insights.push({
       type: 'warning',
-      title: 'Success Rate Needs Attention',
-      description: `Success rate is ${stats.successRate.toFixed(1)}%. Consider investigating common failure causes.`,
-      metric: stats.successRate,
-      recommendation: 'Review error logs and improve input validation.',
+      title: 'Security Score Needs Improvement',
+      description: `Average post-audit security score is ${stats.averagePostAuditScore.toFixed(1)}/100. Consider focusing on vulnerability remediation.`,
+      metric: stats.averagePostAuditScore,
+      recommendation: 'Review and address high-severity vulnerabilities in audited contracts.',
       priority: 'high',
     });
   }
@@ -426,7 +426,7 @@ export async function generateBusinessMetrics(logs: AuditLogEntry[]): Promise<Bu
     peakUsageDays,
     averageSessionDuration: 0, // Would need session tracking
     averageAuditDuration,
-    successRateTrend: [], // Would need historical success rate data
+    postAuditScoreTrend: [], // Would need historical post-audit score data
     errorRateByType: [], // Would need error categorization
     contractComplexityTrend,
     mostCommonVulnerabilities: [], // Would need vulnerability categorization
