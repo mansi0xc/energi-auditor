@@ -140,8 +140,6 @@ export function DashboardSection() {
         creditsConsumed: 1,
         vulnerabilitiesFound: log.vulnerabilities?.length || 0,
         auditDuration: log.auditDuration ? `${(log.auditDuration / 1000).toFixed(1)}s` : 'N/A',
-        preAuditScore: log.preAuditScore || 'N/A',
-        postAuditScore: log.postAuditScore || 'N/A',
       }));
       
       const filename = `audit-logs-${selectedRange}-${new Date().toISOString().split('T')[0]}.csv`;
@@ -317,8 +315,6 @@ export function DashboardSection() {
                     <th className="text-left py-3 px-4 text-muted-foreground">User</th>
                     <th className="text-left py-3 px-4 text-muted-foreground">Contract</th>
                     <th className="text-left py-3 px-4 text-muted-foreground">Vulnerabilities</th>
-                    <th className="text-left py-3 px-4 text-muted-foreground">Pre Score</th>
-                    <th className="text-left py-3 px-4 text-muted-foreground">Post Score</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -335,16 +331,6 @@ export function DashboardSection() {
                       </td>
                       <td className="py-3 px-4 text-foreground">
                         {log.vulnerabilities?.length || 0}
-                      </td>
-                      <td className="py-3 px-4 text-foreground">
-                        {log.preAuditScore !== undefined && log.preAuditScore !== null 
-                          ? log.preAuditScore.toFixed(1) 
-                          : 'N/A'}
-                      </td>
-                      <td className="py-3 px-4 text-foreground">
-                        {log.postAuditScore !== undefined && log.postAuditScore !== null 
-                          ? log.postAuditScore.toFixed(1) 
-                          : 'N/A'}
                       </td>
                     </tr>
                   ))}
