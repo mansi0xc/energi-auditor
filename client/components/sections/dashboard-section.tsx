@@ -99,7 +99,7 @@ export function DashboardSection() {
 
       const [statsResponse, logsResponse] = await Promise.all([
         fetch(`/api/analytics/stats?${params.toString()}`),
-        fetch(`/api/audit/history?limit=50&${params.toString()}`)
+        fetch(`/api/analytics/recent?limit=50&${params.toString()}`)
       ]);
 
       if (!statsResponse.ok || !logsResponse.ok) {
@@ -115,7 +115,7 @@ export function DashboardSection() {
         setStats(statsResult.data);
       }
       if (logsResult.success) {
-        setRecentLogs(logsResult.data.data || []);
+        setRecentLogs(logsResult.data || []);
       }
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
