@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
-import AuditReport from '@/lib/models/AuditReport';
+import AuditReportModel from '@/lib/models/AuditReport';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -39,7 +39,7 @@ export async function GET(
     await connectDB();
 
     // 4. Fetch audit report
-    const report = await AuditReport.findOne({
+    const report = await AuditReportModel.findOne({
       _id: reportId,
       userEmail, // Ensure user can only access their own reports
     }).lean();

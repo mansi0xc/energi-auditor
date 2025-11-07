@@ -147,11 +147,11 @@ export function generateAuditReportPDF(report: AuditReport, userEmail?: string):
     pdf.setFillColor(250, 250, 250);
     pdf.rect(0, 0, pageWidth, pageHeight, 'F');
     
-    pdf.setFillColor(0, 213, 106);
-    pdf.setGState(new pdf.GState({ opacity: 0.1 }));
+    // Note: Opacity effects removed as setGState is not available in standard jsPDF
+    // Using lighter fill colors instead for subtle background effects
+    pdf.setFillColor(240, 250, 245); // Light green tint
     pdf.circle(pageWidth - 20, 20, 60, 'F');
     pdf.circle(20, pageHeight - 20, 40, 'F');
-    pdf.setGState(new pdf.GState({ opacity: 1 }));
     
     yPosition = 35;
     
@@ -352,10 +352,14 @@ export function generateAuditReportPDF(report: AuditReport, userEmail?: string):
       const x = margin + index * (boxWidth + 5);
       const color = severityColorsRGB[index];
       
-      pdf.setFillColor(color[0], color[1], color[2]);
-      pdf.setGState(new pdf.GState({ opacity: 0.15 }));
+      // Use lighter tint for background instead of opacity
+      const lightColor = [
+        Math.min(255, color[0] + 200),
+        Math.min(255, color[1] + 200),
+        Math.min(255, color[2] + 200)
+      ];
+      pdf.setFillColor(lightColor[0], lightColor[1], lightColor[2]);
       pdf.roundedRect(x, yPosition, boxWidth, boxHeight, 3, 3, 'F');
-      pdf.setGState(new pdf.GState({ opacity: 1 }));
       
       pdf.setDrawColor(color[0], color[1], color[2]);
       pdf.setLineWidth(1.5);
@@ -387,11 +391,9 @@ export function generateAuditReportPDF(report: AuditReport, userEmail?: string):
     
     yPosition += 15;
     
-    // Gold star circle background
-    pdf.setFillColor(251, 191, 36);
-    pdf.setGState(new pdf.GState({ opacity: 0.2 }));
+    // Gold star circle background (using lighter tint)
+    pdf.setFillColor(255, 240, 200); // Light gold tint
     pdf.circle(margin + 20, yPosition + 5, 10, 'F');
-    pdf.setGState(new pdf.GState({ opacity: 1 }));
     
     // Gold star
     pdf.setTextColor(251, 191, 36);

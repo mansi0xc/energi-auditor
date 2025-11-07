@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { logger, generateRequestId } from '@/lib/logging';
 import { auditSmartContract, AuditError, type AuditReport, type Vulnerability } from '@/functions/auditInit';
 import connectDB from '@/lib/mongodb';
-import AuditReport from '@/lib/models/AuditReport';
+import AuditReportModel from '@/lib/models/AuditReport';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     // 8. Save audit report to MongoDB
     try {
       await connectDB();
-      await AuditReport.create({
+      await AuditReportModel.create({
         userEmail,
         contractName: auditReport.contractName,
         language: auditReport.language,

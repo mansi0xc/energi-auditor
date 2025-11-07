@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import connectDB from '@/lib/mongodb';
-import AuditReport from '@/lib/models/AuditReport';
+import AuditReportModel from '@/lib/models/AuditReport';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -38,14 +38,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 5. Fetch audit reports
-    const reports = await AuditReport.find(query)
+    const reports = await AuditReportModel.find(query)
       .sort({ auditedAt: -1 }) // Most recent first
       .limit(limit)
       .skip(skip)
       .lean(); // Use lean() for better performance
 
     // 6. Get total count for pagination
-    const total = await AuditReport.countDocuments(query);
+    const total = await AuditReportModel.countDocuments(query);
 
     // 7. Return results
     return NextResponse.json({
