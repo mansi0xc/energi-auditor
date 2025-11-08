@@ -28,12 +28,22 @@ interface AuditHistoryItem {
   vulnerabilities: Array<{
     id: string;
     title: string;
+    description?: string;
+    recommendation?: string;
     severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+    function?: string;
+    lines?: number[];
+    category?: string;
   }>;
   linesOfCode?: number;
   auditedAt: string;
   auditDuration?: number;
   createdAt: string;
+  riskScore?: number;
+  isReAudit?: boolean;
+  originalAuditId?: string;
+  auditEngineVersion?: string;
+  rawResponse?: unknown;
 }
 
 export default function HistoryPage() {
@@ -47,6 +57,15 @@ export default function HistoryPage() {
   const [reportDetails, setReportDetails] = useState<AuditReport | null>(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
   const [downloadingPDF, setDownloadingPDF] = useState(false)
+  const [showReAuditForm, setShowReAuditForm] = useState(false)
+  const [improvedContract, setImprovedContract] = useState("")
+  const [isReAuditing, setIsReAuditing] = useState(false)
+  const [reAuditError, setReAuditError] = useState<string | null>(null)
+  const [hasReAudit, setHasReAudit] = useState(false)
+  const [reAuditData, setReAuditData] = useState<AuditHistoryItem[]>([])
+  const [originalAuditData, setOriginalAuditData] = useState<AuditHistoryItem | null>(null)
+  const [viewingOriginal, setViewingOriginal] = useState(true) // Toggle between original and re-audits
+  const [currentReAuditIndex, setCurrentReAuditIndex] = useState(0) // Which re-audit we're viewing
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -93,33 +112,115 @@ export default function HistoryPage() {
   const fetchReportDetails = async (reportId: string) => {
     try {
       setLoadingDetails(true)
-      const response = await fetch(`/api/audit/${reportId}`)
-      const result = await response.json()
+      const [reportResponse, reAuditResponse] = await Promise.all([
+        fetch(`/api/audit/${reportId}`),
+        fetch(`/api/audit/${reportId}/reaudit`)
+      ])
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch report details')
+      const reportResult = await reportResponse.json()
+      const reAuditResult = await reAuditResponse.json()
+
+      if (!reportResponse.ok) {
+        throw new Error(reportResult.error || 'Failed to fetch report details')
       }
 
-      if (result.success && result.data) {
-        // Convert the MongoDB document to AuditReport format
+      if (reportResult.success && reportResult.data) {
+        const reportData = reportResult.data
+        
+        // Determine if we're viewing an original audit or a re-audit
+        const isViewingReAudit = reportData.isReAudit
+        
+        if (reAuditResult.success && reAuditResult.data) {
+          const { originalAudit, reAudits } = reAuditResult.data
+          
+          // Set original audit data
+          if (originalAudit) {
+            setOriginalAuditData(originalAudit)
+          }
+          
+          // Set re-audits array
+          setReAuditData(reAudits || [])
+          setHasReAudit((reAudits || []).length > 0)
+          
+          // If viewing a re-audit, find its index in the re-audits array
+          if (isViewingReAudit && reAudits && reAudits.length > 0) {
+            const index = reAudits.findIndex((r: any) => r._id === reportId)
+            if (index >= 0) {
+              setCurrentReAuditIndex(index)
+              setViewingOriginal(false)
+            } else {
+              setViewingOriginal(true)
+            }
+          } else {
+            // Viewing original audit
+            setViewingOriginal(true)
+            setCurrentReAuditIndex(0)
+          }
+        } else {
+          // No re-audits
+          setViewingOriginal(true)
+          setHasReAudit(false)
+          setReAuditData([])
+          setOriginalAuditData(null)
+        }
+        
+        // Convert the MongoDB document to AuditReport format for display
         const report: AuditReport = {
-          contractName: result.data.contractName,
-          language: result.data.language as any,
-          summary: result.data.summary,
-          vulnerabilities: result.data.vulnerabilities,
-          linesOfCode: result.data.linesOfCode,
-          auditedAt: new Date(result.data.auditedAt),
-          auditEngineVersion: result.data.auditEngineVersion,
-          rawResponse: result.data.rawResponse,
+          contractName: reportData.contractName,
+          language: reportData.language as any,
+          summary: reportData.summary,
+          vulnerabilities: reportData.vulnerabilities,
+          linesOfCode: reportData.linesOfCode,
+          auditedAt: new Date(reportData.auditedAt),
+          auditEngineVersion: reportData.auditEngineVersion,
+          rawResponse: reportData.rawResponse,
         }
         setReportDetails(report)
-        setSelectedReport(result.data)
+        setSelectedReport(reportData)
       }
     } catch (err: any) {
       console.error("Error fetching report details:", err)
       setError(err.message || "Failed to load report details")
     } finally {
       setLoadingDetails(false)
+    }
+  }
+
+  // Function to switch between original and re-audit views
+  const switchToView = (viewOriginal: boolean, reAuditIndex: number = 0) => {
+    if (viewOriginal && originalAuditData) {
+      // Switch to original audit
+      const report: AuditReport = {
+        contractName: originalAuditData.contractName,
+        language: originalAuditData.language as any,
+        summary: originalAuditData.summary,
+        vulnerabilities: originalAuditData.vulnerabilities as any,
+        linesOfCode: originalAuditData.linesOfCode,
+        auditedAt: new Date(originalAuditData.auditedAt),
+        auditEngineVersion: originalAuditData.auditEngineVersion,
+        rawResponse: originalAuditData.rawResponse,
+      }
+      setReportDetails(report)
+      setSelectedReport(originalAuditData)
+      setViewingOriginal(true)
+      setCurrentReAuditIndex(0)
+    } else if (!viewOriginal && reAuditData.length > 0 && reAuditData[reAuditIndex]) {
+      // Switch to a specific re-audit
+      const reAudit = reAuditData[reAuditIndex]
+      const report: AuditReport = {
+        contractName: reAudit.contractName,
+        language: reAudit.language as any,
+        summary: reAudit.summary,
+        vulnerabilities: reAudit.vulnerabilities as any,
+        linesOfCode: reAudit.linesOfCode,
+        auditedAt: new Date(reAudit.auditedAt),
+        auditEngineVersion: reAudit.auditEngineVersion,
+        rawResponse: reAudit.rawResponse,
+      }
+      setReportDetails(report)
+      setSelectedReport(reAudit)
+      setViewingOriginal(false)
+      setCurrentReAuditIndex(reAuditIndex)
     }
   }
 
@@ -135,6 +236,73 @@ export default function HistoryPage() {
       setError('Failed to generate PDF report. Please try again.')
     } finally {
       setDownloadingPDF(false)
+    }
+  }
+
+  const handleReAudit = async () => {
+    if (!originalAuditData || !improvedContract.trim()) {
+      setReAuditError('Please enter the improved contract code')
+      return
+    }
+
+    setIsReAuditing(true)
+    setReAuditError(null)
+
+    try {
+      // Always use the original audit ID for re-audits
+      const originalId = originalAuditData._id
+      const response = await fetch('/api/audit/reaudit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          originalAuditId: originalId,
+          improvedContractCode: improvedContract.trim(),
+          contractName: originalAuditData.contractName,
+          timeout: 120000,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to re-audit contract')
+      }
+
+      if (result.success) {
+        // Close the form but keep the modal open to show the new re-audit
+        setShowReAuditForm(false)
+        setImprovedContract("")
+        setReAuditError(null)
+        
+        // Refresh the report details to include the new re-audit
+        if (originalAuditData) {
+          // Use original audit ID to fetch updated data
+          await fetchReportDetails(originalAuditData._id)
+          // Switch to view the new re-audit (most recent, index 0)
+          setTimeout(() => {
+            switchToView(false, 0)
+          }, 100)
+        }
+        
+        // Refresh the history list
+        fetchHistory()
+        
+        // Show success message with improvement details
+        const improvement = result.metadata.improvement
+        const message = improvement && parseFloat(improvement) > 0
+          ? `Re-audit completed! Risk score improved from ${result.metadata.originalRiskScore?.toFixed(1)} to ${result.metadata.newRiskScore?.toFixed(1)} (${improvement}% improvement)`
+          : improvement && parseFloat(improvement) < 0
+          ? `Re-audit completed! Risk score changed from ${result.metadata.originalRiskScore?.toFixed(1)} to ${result.metadata.newRiskScore?.toFixed(1)} (${Math.abs(parseFloat(improvement)).toFixed(1)}% increase)`
+          : `Re-audit completed! Risk score: ${result.metadata.newRiskScore?.toFixed(1)}`
+        alert(message)
+      }
+    } catch (err: any) {
+      console.error("Re-audit error:", err)
+      setReAuditError(err.message || "Failed to re-audit contract. Please try again.")
+    } finally {
+      setIsReAuditing(false)
     }
   }
 
@@ -292,13 +460,23 @@ export default function HistoryPage() {
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <h3 className="text-lg font-semibold text-foreground">
                         {report.contractName}
                       </h3>
                       <span className="px-2 py-1 text-xs font-medium rounded bg-primary/10 text-primary">
                         {report.language}
                       </span>
+                      {report.riskScore !== undefined && (
+                        <span className={`px-2 py-1 text-xs font-medium rounded border ${
+                          report.riskScore >= 75 ? 'bg-red-500/10 text-red-600 border-red-500/20' :
+                          report.riskScore >= 50 ? 'bg-orange-500/10 text-orange-600 border-orange-500/20' :
+                          report.riskScore >= 25 ? 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20' :
+                          'bg-green-500/10 text-green-600 border-green-500/20'
+                        }`}>
+                          Risk: {report.riskScore.toFixed(1)}
+                        </span>
+                      )}
                     </div>
                     
                     <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
@@ -384,6 +562,16 @@ export default function HistoryPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  {/* Always show submit button for original audits, regardless of re-audits */}
+                  {originalAuditData && viewingOriginal && (
+                    <Button
+                      onClick={() => setShowReAuditForm(!showReAuditForm)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      {showReAuditForm ? 'Cancel' : 'Submit Improved Contract'}
+                    </Button>
+                  )}
                   <Button
                     onClick={handleDownloadPDF}
                     disabled={downloadingPDF}
@@ -406,6 +594,14 @@ export default function HistoryPage() {
                     onClick={() => {
                       setSelectedReport(null)
                       setReportDetails(null)
+                      setShowReAuditForm(false)
+                      setImprovedContract("")
+                      setReAuditError(null)
+                      setHasReAudit(false)
+                      setReAuditData([])
+                      setOriginalAuditData(null)
+                      setViewingOriginal(true)
+                      setCurrentReAuditIndex(0)
                     }}
                     variant="ghost"
                     size="sm"
@@ -416,9 +612,139 @@ export default function HistoryPage() {
               </div>
 
               <div className="p-6">
+                {/* Toggle between Original and Re-Audits */}
+                {originalAuditData && (hasReAudit || viewingOriginal) && (
+                  <div className="mb-6 p-4 bg-muted/20 border border-border rounded-lg">
+                    <div className="flex items-center justify-between flex-wrap gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground">View:</span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={() => switchToView(true)}
+                            variant={viewingOriginal ? "default" : "outline"}
+                            size="sm"
+                          >
+                            Original Audit
+                          </Button>
+                          {hasReAudit && reAuditData.length > 0 && (
+                            <>
+                              {reAuditData.map((reAudit, index) => (
+                                <Button
+                                  key={reAudit._id}
+                                  onClick={() => switchToView(false, index)}
+                                  variant={!viewingOriginal && currentReAuditIndex === index ? "default" : "outline"}
+                                  size="sm"
+                                >
+                                  Re-Audit #{index + 1}
+                                  {index === 0 && reAuditData.length > 1 && " (Latest)"}
+                                </Button>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      {originalAuditData && originalAuditData.riskScore !== undefined && (
+                        <div className="flex items-center gap-4 text-sm">
+                          {viewingOriginal ? (
+                            <span className="text-muted-foreground">
+                              Risk Score: <span className="font-bold text-foreground">{originalAuditData.riskScore.toFixed(1)}/100</span>
+                            </span>
+                          ) : reAuditData.length > 0 && reAuditData[currentReAuditIndex] && (
+                            <div className="flex items-center gap-4">
+                              <span className="text-muted-foreground">
+                                Original: <span className="font-bold text-orange-600">{originalAuditData.riskScore.toFixed(1)}/100</span>
+                              </span>
+                              <span className="text-muted-foreground">
+                                Current: <span className={`font-bold ${
+                                  reAuditData[currentReAuditIndex].riskScore! < originalAuditData.riskScore 
+                                    ? 'text-green-600' 
+                                    : 'text-red-600'
+                                }`}>
+                                  {reAuditData[currentReAuditIndex].riskScore!.toFixed(1)}/100
+                                </span>
+                              </span>
+                              {reAuditData[currentReAuditIndex].riskScore! < originalAuditData.riskScore && (
+                                <span className="text-green-600 font-medium">
+                                  Improved by {((originalAuditData.riskScore - reAuditData[currentReAuditIndex].riskScore!) / originalAuditData.riskScore * 100).toFixed(1)}%
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Re-Audit Form - Show when viewing original audit */}
+                {showReAuditForm && viewingOriginal && originalAuditData && (
+                  <div className="mb-6 p-4 bg-muted/20 border border-border rounded-lg">
+                    <h3 className="text-lg font-semibold text-foreground mb-3">
+                      Submit Improved Contract
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Paste your improved contract code below. After auditing, the risk score will be used as the post-audit score.
+                    </p>
+                    
+                    <textarea
+                      value={improvedContract}
+                      onChange={(e) => setImprovedContract(e.target.value)}
+                      placeholder="Paste your improved contract code here..."
+                      className="w-full h-64 p-3 border border-border rounded-lg bg-card text-foreground font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+
+                    {reAuditError && (
+                      <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-600 text-sm">
+                        {reAuditError}
+                      </div>
+                    )}
+
+                    <div className="mt-4 flex items-center gap-3">
+                      <Button
+                        onClick={handleReAudit}
+                        disabled={isReAuditing || !improvedContract.trim()}
+                        size="sm"
+                      >
+                        {isReAuditing ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Auditing...
+                          </>
+                        ) : (
+                          'Submit for Re-Audit'
+                        )}
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          setShowReAuditForm(false)
+                          setImprovedContract("")
+                          setReAuditError(null)
+                        }}
+                        variant="outline"
+                        size="sm"
+                        disabled={isReAuditing}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold text-foreground mb-2">Summary</h3>
                   <p className="text-muted-foreground">{reportDetails.summary}</p>
+                  {selectedReport.riskScore !== undefined && (
+                    <div className="mt-3">
+                      <span className="text-sm font-medium text-foreground">Risk Score: </span>
+                      <span className={`text-sm font-bold ${
+                        selectedReport.riskScore >= 75 ? 'text-red-600' :
+                        selectedReport.riskScore >= 50 ? 'text-orange-600' :
+                        selectedReport.riskScore >= 25 ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {selectedReport.riskScore.toFixed(1)}/100
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mb-6">

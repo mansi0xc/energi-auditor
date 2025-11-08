@@ -13,8 +13,9 @@ export interface IAuditReport extends Document {
   rawResponse?: unknown;
   requestId?: string;
   auditDuration?: number;
-  preAuditScore?: number; // Score from 0-100 based on contract complexity/analysis
-  postAuditScore?: number; // Security score from 0-100 after audit (inverse of risk score)
+  riskScore?: number; // Risk score from 0-100 (calculated from vulnerabilities)
+  originalAuditId?: string; // Reference to original audit if this is a re-audit
+  isReAudit?: boolean; // Whether this is a re-audit of an improved contract
   createdAt: Date;
   updatedAt: Date;
 }
@@ -67,8 +68,13 @@ const AuditReportSchema = new Schema(
     rawResponse: { type: Schema.Types.Mixed },
     requestId: { type: String },
     auditDuration: { type: Number },
-    preAuditScore: { type: Number, min: 0, max: 100 },
-    postAuditScore: { type: Number, min: 0, max: 100 },
+    riskScore: { type: Number, min: 0, max: 100 },
+    originalAuditId: { 
+      type: Schema.Types.ObjectId, 
+      ref: 'AuditReport',
+      index: true // Index for faster queries
+    },
+    isReAudit: { type: Boolean, default: false, index: true },
   },
   {
     timestamps: true, // Automatically adds createdAt and updatedAt

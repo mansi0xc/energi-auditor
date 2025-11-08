@@ -45,16 +45,35 @@ export async function GET(request: NextRequest) {
     const totalCreditsConsumed = totalAudits; // 1 credit per audit
     const uniqueUsers = new Set(reports.map(r => r.userEmail)).size;
     
-    // Calculate average pre and post audit scores
-    const scoresWithPre = reports.filter(r => r.preAuditScore !== undefined && r.preAuditScore !== null);
-    const scoresWithPost = reports.filter(r => r.postAuditScore !== undefined && r.postAuditScore !== null);
-    
-    const averagePreAuditScore = scoresWithPre.length > 0
-      ? scoresWithPre.reduce((sum, r) => sum + (r.preAuditScore || 0), 0) / scoresWithPre.length
+    // Calculate pre and post audit scores from risk scores
+    // Pre Audit Score = average risk score of first audit for each contract (initial audits only)
+    const initialAudits = reports.filter(r => !r.isReAudit && r.riskScore !== undefined && r.riskScore !== null);
+    const averagePreAuditScore = initialAudits.length > 0
+      ? initialAudits.reduce((sum, r) => sum + (r.riskScore || 0), 0) / initialAudits.length
       : 0;
     
-    const averagePostAuditScore = scoresWithPost.length > 0
-      ? scoresWithPost.reduce((sum, r) => sum + (r.postAuditScore || 0), 0) / scoresWithPost.length
+    // Post Audit Score = average risk score of LAST re-audit for each contract that has re-audits
+    // Group re-audits by originalAuditId, then get the most recent one for each
+    const reAuditsByOriginal = new Map<string, typeof reports[0]>();
+    
+    // Get all re-audits with risk scores
+    const allReAudits = reports.filter(r => r.isReAudit && r.riskScore !== undefined && r.riskScore !== null && r.originalAuditId);
+    
+    // For each re-audit, keep only the most recent one per original audit
+    allReAudits.forEach(reAudit => {
+      const originalId = reAudit.originalAuditId?.toString();
+      if (!originalId) return;
+      
+      const existing = reAuditsByOriginal.get(originalId);
+      if (!existing || new Date(reAudit.auditedAt) > new Date(existing.auditedAt)) {
+        reAuditsByOriginal.set(originalId, reAudit);
+      }
+    });
+    
+    // Calculate average of the last re-audit risk scores
+    const lastReAuditScores = Array.from(reAuditsByOriginal.values()).map(r => r.riskScore || 0);
+    const averagePostAuditScore = lastReAuditScores.length > 0
+      ? lastReAuditScores.reduce((sum, score) => sum + score, 0) / lastReAuditScores.length
       : 0;
 
     // Calculate average audit duration

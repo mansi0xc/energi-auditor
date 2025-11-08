@@ -33,8 +33,15 @@ export async function GET(request: NextRequest) {
     // 3. Connect to database
     await connectDB();
 
-    // 4. Build query
-    const query: any = { userEmail };
+    // 4. Build query - by default, show only initial audits (not re-audits)
+    // Re-audits can be shown separately if needed
+    const query: any = { 
+      userEmail,
+      $or: [
+        { isReAudit: { $exists: false } },
+        { isReAudit: false }
+      ]
+    };
     if (contractName) {
       query.contractName = { $regex: contractName, $options: 'i' };
     }

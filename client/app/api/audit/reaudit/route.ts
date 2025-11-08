@@ -9,30 +9,17 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * Request body interface
+ * Request body interface for re-audit
  */
-interface AuditRequest {
-  contractCode: string;
+interface ReAuditRequest {
+  originalAuditId: string;
+  improvedContractCode: string;
   contractName?: string;
   timeout?: number;
 }
 
-
 /**
- * Calculate severity breakdown for logging
- */
-function calculateSeverityBreakdown(vulnerabilities: Vulnerability[]) {
-  return vulnerabilities.reduce(
-    (breakdown, vuln) => {
-      breakdown[vuln.severity.toLowerCase() as keyof typeof breakdown]++;
-      return breakdown;
-    },
-    { critical: 0, high: 0, medium: 0, low: 0 }
-  );
-}
-
-/**
- * POST /api/audit - Audit smart contract
+ * POST /api/audit/reaudit - Re-audit an improved contract
  */
 export async function POST(request: NextRequest) {
   const requestId = generateRequestId();
@@ -42,13 +29,6 @@ export async function POST(request: NextRequest) {
     // 1. Validate session
     const session = await getServerSession();
     if (!session?.user?.email) {
-      await logger.logError(
-        'UNAUTHORIZED_ACCESS',
-        'Audit attempt without valid session',
-        undefined,
-        undefined,
-        requestId
-      );
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
@@ -60,13 +40,6 @@ export async function POST(request: NextRequest) {
     // 2. Validate email domain
     const allowedDomain = process.env.ALLOWED_EMAIL_DOMAIN || '@energi.team';
     if (!userEmail.endsWith(allowedDomain)) {
-      await logger.logError(
-        'DOMAIN_RESTRICTION',
-        `Audit attempt from unauthorized domain: ${userEmail}`,
-        userEmail,
-        undefined,
-        requestId
-      );
       return NextResponse.json(
         { error: 'Access denied: Invalid email domain' },
         { status: 403 }
@@ -74,41 +47,53 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Parse and validate request body
-    let body: AuditRequest;
+    let body: ReAuditRequest;
     try {
       body = await request.json();
     } catch (error) {
-      await logger.logError(
-        'INVALID_REQUEST_BODY',
-        'Failed to parse request body',
-        userEmail,
-        error instanceof Error ? error.stack : undefined,
-        requestId
-      );
       return NextResponse.json(
         { error: 'Invalid request body' },
         { status: 400 }
       );
     }
 
-    const { contractCode, contractName, timeout = 90000 } = body;
+    const { originalAuditId, improvedContractCode, contractName, timeout = 90000 } = body;
 
-    // Contract code validation is handled by auditSmartContract function
+    if (!improvedContractCode.trim()) {
+      return NextResponse.json(
+        { error: 'Improved contract code is required' },
+        { status: 400 }
+      );
+    }
 
-    // 5. Log audit start
+    // 4. Connect to database and verify original audit exists and belongs to user
+    await connectDB();
+    const originalAudit = await AuditReportModel.findOne({
+      _id: originalAuditId,
+      userEmail, // Ensure user can only re-audit their own contracts
+    });
+
+    if (!originalAudit) {
+      return NextResponse.json(
+        { error: 'Original audit not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    // 5. Log re-audit start
     const logId = await logger.logAuditStart(
       userEmail,
-      contractName,
-      contractCode.length,
+      contractName || originalAudit.contractName,
+      improvedContractCode.length,
       requestId
     );
 
-    // 6. Call audit function
+    // 6. Call audit function on improved contract
     let auditReport: AuditReport;
     try {
       auditReport = await auditSmartContract(
-        contractCode,
-        contractName,
+        improvedContractCode,
+        contractName || originalAudit.contractName,
         { timeout }
       );
     } catch (error) {
@@ -134,46 +119,47 @@ export async function POST(request: NextRequest) {
       await logger.logAuditComplete(
         logId,
         userEmail,
-        contractName,
-        contractCode.length,
-        false, // success = false
+        contractName || originalAudit.contractName,
+        improvedContractCode.length,
+        false,
         auditDuration,
-        undefined, // vulnerabilitiesFound
-        undefined, // severityBreakdown
+        undefined,
+        undefined,
         errorMessage,
         requestId
       );
 
       return NextResponse.json(
-        { error: 'Failed to audit smart contract. Please try again later.' },
+        { error: 'Failed to audit improved contract. Please try again later.' },
         { status: 500 }
       );
     }
 
     // 7. Calculate metrics and log completion
     const auditDuration = Date.now() - startTime;
-    const severityBreakdown = calculateSeverityBreakdown(auditReport.vulnerabilities);
+    const riskScore = calculateRiskScore(auditReport);
 
     await logger.logAuditComplete(
       logId,
       userEmail,
-      contractName,
-      contractCode.length,
-      true, // success = true
+      contractName || originalAudit.contractName,
+      improvedContractCode.length,
+      true,
       auditDuration,
       auditReport.vulnerabilities.length,
-      severityBreakdown,
-      undefined, // errorMessage
+      {
+        critical: auditReport.vulnerabilities.filter(v => v.severity === 'CRITICAL').length,
+        high: auditReport.vulnerabilities.filter(v => v.severity === 'HIGH').length,
+        medium: auditReport.vulnerabilities.filter(v => v.severity === 'MEDIUM').length,
+        low: auditReport.vulnerabilities.filter(v => v.severity === 'LOW').length,
+      },
+      undefined,
       requestId
     );
 
-    // 8. Calculate risk score from vulnerabilities
-    const riskScore = calculateRiskScore(auditReport);
-
-    // 9. Save audit report to MongoDB
+    // 8. Save re-audit report to MongoDB
     try {
-      await connectDB();
-      await AuditReportModel.create({
+      const reAuditReport = await AuditReportModel.create({
         userEmail,
         contractName: auditReport.contractName,
         language: auditReport.language,
@@ -186,35 +172,54 @@ export async function POST(request: NextRequest) {
         requestId,
         auditDuration,
         riskScore,
-        isReAudit: false, // Initial audit
+        originalAuditId: originalAuditId,
+        isReAudit: true,
+      });
+
+      // 9. Re-audit is saved, analytics will calculate average from all re-audits
+
+      return NextResponse.json({
+        success: true,
+        data: auditReport,
+        reAuditId: reAuditReport._id.toString(),
+        metadata: {
+          requestId,
+          auditDuration,
+          creditsConsumed: 1,
+          vulnerabilitiesFound: auditReport.vulnerabilities.length,
+          riskScore,
+          improvement: originalAudit.riskScore !== undefined && originalAudit.riskScore !== null
+            ? ((originalAudit.riskScore - riskScore) / originalAudit.riskScore * 100).toFixed(1)
+            : null,
+          originalRiskScore: originalAudit.riskScore,
+          newRiskScore: riskScore,
+        }
       });
     } catch (dbError) {
-      // Log database error but don't fail the request
-      console.error('Failed to save audit report to database:', dbError);
+      console.error('Failed to save re-audit report to database:', dbError);
       await logger.logError(
         'DATABASE_ERROR',
-        'Failed to save audit report to MongoDB',
+        'Failed to save re-audit report to MongoDB',
         userEmail,
         dbError instanceof Error ? dbError.stack : undefined,
         requestId
       );
+
+      // Still return the audit report even if DB save fails
+      return NextResponse.json({
+        success: true,
+        data: auditReport,
+        metadata: {
+          requestId,
+          auditDuration,
+          creditsConsumed: 1,
+          vulnerabilitiesFound: auditReport.vulnerabilities.length,
+          riskScore,
+        }
+      });
     }
 
-    // 10. Return audit report
-    return NextResponse.json({
-      success: true,
-      data: auditReport,
-      metadata: {
-        requestId,
-        auditDuration,
-        creditsConsumed: 1,
-        vulnerabilitiesFound: auditReport.vulnerabilities.length,
-        riskScore,
-      }
-    });
-
   } catch (error) {
-    // Handle any unexpected errors
     const auditDuration = Date.now() - startTime;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     
@@ -233,18 +238,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * GET /api/audit - Get audit status/info (optional)
- */
-export async function GET() {
-  return NextResponse.json({
-    service: 'Energi Smart Contract Audit API',
-    version: '1.0.0',
-    status: 'operational',
-    endpoints: {
-      audit: 'POST /api/audit',
-      logs: 'GET /api/logs',
-      stats: 'GET /api/logs/stats',
-    }
-  });
-}
